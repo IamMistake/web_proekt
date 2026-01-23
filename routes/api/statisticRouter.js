@@ -7,6 +7,24 @@ const Order = require("../../models/Order");
 // Middleware
 const authAdminMiddleware = require("../../middleware/authAdmin");
 
+/**
+ * @swagger
+ * /api/statistic/statistic:
+ *   get:
+ *     tags: [Statistics]
+ *     summary: Admin statistics
+ *     security:
+ *       - AdminToken: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Statistics response
+ */
 // Get Statistics
 router.get(
   "/statistic",

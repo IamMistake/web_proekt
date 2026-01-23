@@ -3,11 +3,36 @@ const router = express.Router();
 // Models
 const Supplier = require("../../models/Supplier");
 // Middleware
-const { check, validationResult } = require("express-validator");
+const { check } = require("express-validator");
+const validateRequest = require("../../middleware/validateRequest");
 const authAdminMiddleware = require("../../middleware/authAdmin");
 
 
 
+/**
+ * @swagger
+ * /api/supplier/supplier/:
+ *   post:
+ *     tags: [Suppliers]
+ *     summary: Create a supplier
+ *     security:
+ *       - AdminToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/Supplier"
+ *     responses:
+ *       200:
+ *         description: Supplier created
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ErrorResponse"
+ */
 // Add a Supplier
 router.post(
   '/supplier/',
@@ -23,13 +48,8 @@ router.post(
       "Please enter an address"
     ).isLength({ min: 3 }),
   ], // End of Express Validator
+  validateRequest,
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        errors: errors.array(),
-      });
-    }
     try {
       console.log('supplierRouter -> addSupplier -> req.body ->', req.body)
       const {
@@ -59,6 +79,23 @@ router.post(
 );
 
 
+/**
+ * @swagger
+ * /api/supplier/query:
+ *   get:
+ *     tags: [Suppliers]
+ *     summary: Query suppliers
+ *     security:
+ *       - AdminToken: []
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Supplier list
+ */
 // Query Suppliers
 router.get(
   "/query",

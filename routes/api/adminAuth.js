@@ -4,12 +4,35 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const config = require("config");
 // Middleware
-const { check, validationResult } = require("express-validator");
+const { check } = require("express-validator");
+const validateRequest = require("../../middleware/validateRequest");
 const authAdminMiddleware = require("../../middleware/authAdmin");
 // Models
 const Admin = require("../../models/Admin");
 
 
+/**
+ * @swagger
+ * /api/admin-auth/register/:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Register an admin user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/AdminAuthRequest"
+ *     responses:
+ *       200:
+ *         description: Admin registered
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ErrorResponse"
+ */
 // Add Admin Account - Register Admin
 router.post(
   "/register/",
@@ -20,14 +43,8 @@ router.post(
       "Please enter a password with 6 or more characters"
     ).isLength({ min: 6 })
   ], // End of Express Validator
-  
+  validateRequest,
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        errors: errors.array(),
-      });
-    }    
     try {
       // let i = 1+1;
       // if ( i === 2 ) {
@@ -75,6 +92,28 @@ router.post(
 ); // End of Add Admin Account - Register Admin
 
 
+/**
+ * @swagger
+ * /api/admin-auth/auth:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Admin login
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/AdminAuthRequest"
+ *     responses:
+ *       200:
+ *         description: Login success
+ *       400:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ErrorResponse"
+ */
 // Admin Login
 router.post(
   '/auth',
@@ -85,14 +124,8 @@ router.post(
       "Please enter a password with 6 or more characters"
     ).isLength({ min: 6 })
   ], // End of Express Validator
-  
+  validateRequest,
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        errors: errors.array(),
-      });
-    }
 
     try {
       const {  email, password } = req.body;

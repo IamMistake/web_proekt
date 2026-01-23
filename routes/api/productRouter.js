@@ -8,10 +8,34 @@ const {
   fileCheck,
   resizeFile,
 } = require("../../utils/UploadFile");
+const { check } = require("express-validator");
+const validateRequest = require("../../middleware/validateRequest");
 // Middleware
 const authAdminMiddleware = require("../../middleware/authAdmin");
 
 
+/**
+ * @swagger
+ * /api/product/add-image/:
+ *   post:
+ *     tags: [Products]
+ *     summary: Upload a product image
+ *     security:
+ *       - AdminToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Image created
+ */
 // Add a Picture
 router.post(
   "/add-image/", 
@@ -32,6 +56,34 @@ router.post(
   }
 });
 
+/**
+ * @swagger
+ * /api/product/product/:
+ *   post:
+ *     tags: [Products]
+ *     summary: Create a product
+ *     security:
+ *       - AdminToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               images[]:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *               jsonText:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Product created
+ *       400:
+ *         description: Validation error
+ */
 // Add a Product
 router.post(
   "/product/",
@@ -39,10 +91,35 @@ router.post(
   fileCheck.array(
     'images[]', 10
   ),
+  [
+    check("jsonText").custom((value, { req }) => {
+      let parsed;
+      try {
+        parsed = JSON.parse(value);
+      } catch (error) {
+        throw new Error("Invalid product payload");
+      }
+      if (!parsed.productNo || typeof parsed.productNo !== "string") {
+        throw new Error("Product name is required");
+      }
+      if (typeof parsed.price !== "number" || parsed.price <= 0) {
+        throw new Error("Price must be a number greater than 0");
+      }
+      if (!Array.isArray(parsed.category) || parsed.category.length === 0) {
+        throw new Error("Category must be a non-empty array");
+      }
+      if (!parsed.category.every((id) => typeof id === "string")) {
+        throw new Error("Category values must be strings");
+      }
+      req.productPayload = parsed;
+      return true;
+    }),
+  ],
+  validateRequest,
   async (req, res) => {
     try {
       const product = new Product();
-      const jsonObject = JSON.parse(req.body.jsonText);
+      const jsonObject = req.productPayload || JSON.parse(req.body.jsonText);
       console.log('productRouter -> addProduct -> jsonObject ->', jsonObject);
       const {
         brand,
@@ -181,6 +258,24 @@ router.post(
 )
 
 
+/**
+ * @swagger
+ * /api/product/product/{productId}:
+ *   delete:
+ *     tags: [Products]
+ *     summary: Delete a product
+ *     security:
+ *       - AdminToken: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product deleted
+ */
 // Delete a Product
 router.delete(
   "/product/:productId",
@@ -222,6 +317,23 @@ router.delete(
   }
 )
 
+/**
+ * @swagger
+ * /api/product/product:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get products for admin
+ *     security:
+ *       - AdminToken: []
+ *     parameters:
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product list
+ */
 // Get Products
 router.get(
   "/product",
@@ -261,6 +373,23 @@ router.get(
 );
 
 
+/**
+ * @swagger
+ * /api/product/query:
+ *   post:
+ *     tags: [Products]
+ *     summary: Query products for admin
+ *     security:
+ *       - AdminToken: []
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product list
+ */
 // Query Products
 router.post(
   "/query",
@@ -316,6 +445,22 @@ router.post(
 
 
 
+/**
+ * @swagger
+ * /api/product/images/{imageId}:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get a product image
+ *     parameters:
+ *       - in: path
+ *         name: imageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Image data
+ */
 // Get Single Image
 router.get( 
   '/images/:imageId',

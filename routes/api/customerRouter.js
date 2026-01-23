@@ -11,12 +11,35 @@ const Order = require("../../models/Order");
 const Feature = require("../../models/Feature");
 const Supplier = require("../../models/Supplier");
 // Middleware
-const { check, validationResult } = require("express-validator");
+const { check } = require("express-validator");
+const validateRequest = require("../../middleware/validateRequest");
 const authCustomerMiddleware = require("../../middleware/authCustomer");
 // Credit Card Payment
 const { getPayment } = require("../../utils/CreditCardPayment");
 
 
+/**
+ * @swagger
+ * /api/customer/auth/signup:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Register a customer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/CustomerAuthRequest"
+ *     responses:
+ *       200:
+ *         description: Customer registered
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ErrorResponse"
+ */
 // Sign Up
 router.post(
   '/auth/signup', 
@@ -27,13 +50,8 @@ router.post(
       "Please enter a password with 6 or more characters"
     ).isLength({ min: 6 })
   ], // End of Express Validator 
+  validateRequest,
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        errors: errors.array(),
-      });
-    }
     try {
       const { email, password } = req.body;
       console.log('customerRouter -> sign up -> email, password', email, password)
@@ -140,6 +158,28 @@ router.post(
 
 
 
+/**
+ * @swagger
+ * /api/customer/auth/signin:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Customer login
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: "#/components/schemas/CustomerAuthRequest"
+ *     responses:
+ *       200:
+ *         description: Login success
+ *       400:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ErrorResponse"
+ */
 // Sign in
 router.post(
   "/auth/signin", 
@@ -150,14 +190,9 @@ router.post(
       "Please enter a password with 6 or more characters"
     ).isLength({ min: 6 })
   ], 
+  validateRequest,
   async (req, res) => {
     console.log('customerRouter -> signin -> email, password ->', req.body.email, req.body.password)
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        errors: errors.array(),
-      });
-    }
     try {
       const { email, password } = req.body;
       // Check if customer exists
@@ -270,6 +305,26 @@ router.post(
 );
 
 
+/**
+ * @swagger
+ * /api/customer/product/addToFav/{productId}:
+ *   post:
+ *     tags: [Users]
+ *     summary: Toggle product favorite
+ *     security:
+ *       - CustomerToken: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Favorites updated
+ *       401:
+ *         description: Unauthorized
+ */
 // Add Product to favorites
 router.post(
   "/product/addToFav/:productId",
@@ -308,6 +363,35 @@ router.post(
 ); // End of  Add Product to favorites
 
 
+/**
+ * @swagger
+ * /api/customer/address/add:
+ *   post:
+ *     tags: [Users]
+ *     summary: Add customer address
+ *     security:
+ *       - CustomerToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               definition:
+ *                 type: string
+ *               receiver:
+ *                 type: string
+ *               addressString:
+ *                 type: string
+ *               city:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Address added
+ *       401:
+ *         description: Unauthorized
+ */
 // Add Address
 router.post(
   "/address/add",
@@ -347,6 +431,18 @@ router.post(
 ); // End of  Add Address
 
 
+/**
+ * @swagger
+ * /api/customer/categories:
+ *   get:
+ *     tags: [Categories]
+ *     summary: Get categories for customers
+ *     security:
+ *       - CustomerToken: []
+ *     responses:
+ *       200:
+ *         description: List of categories
+ */
 // Get Categories
 router.get(
   "/categories",
@@ -365,6 +461,18 @@ router.get(
 );
 
 
+/**
+ * @swagger
+ * /api/customer/feature:
+ *   get:
+ *     tags: [Features]
+ *     summary: Get features for customers
+ *     security:
+ *       - CustomerToken: []
+ *     responses:
+ *       200:
+ *         description: List of features
+ */
 // Get Features
 router.get(
   "/feature",
@@ -389,6 +497,23 @@ router.get(
 );  // End of Get Features
 
 
+/**
+ * @swagger
+ * /api/customer/productByCategory:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get products by category
+ *     security:
+ *       - CustomerToken: []
+ *     parameters:
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of products
+ */
 // Get Products by Category ID
 router.get(
   "/productByCategory",
@@ -429,6 +554,29 @@ router.get(
 
 
 
+/**
+ * @swagger
+ * /api/customer/product/productList:
+ *   post:
+ *     tags: [Products]
+ *     summary: Get products by ID list
+ *     security:
+ *       - CustomerToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               productList:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: List of products
+ */
 // Get products by List of IDs
 router.post(
   "/product/productList",
@@ -461,6 +609,23 @@ router.post(
 );
 
 
+/**
+ * @swagger
+ * /api/customer/product/query:
+ *   post:
+ *     tags: [Products]
+ *     summary: Query products for customers
+ *     security:
+ *       - CustomerToken: []
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product list
+ */
 // Query Products
 router.post(
   "/product/query",
@@ -512,6 +677,31 @@ router.post(
   }
 );
 
+/**
+ * @swagger
+ * /api/customer/product/get:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get products by filters
+ *     security:
+ *       - CustomerToken: []
+ *     parameters:
+ *       - in: query
+ *         name: productId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: brand
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Product list
+ */
 // Get Products
 router.get(
   "/product/get",
@@ -556,6 +746,49 @@ router.get(
 );
 
 
+/**
+ * @swagger
+ * /api/customer/order/add:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Create a customer order
+ *     security:
+ *       - CustomerToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               type:
+ *                 type: string
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   $ref: "#/components/schemas/OrderItem"
+ *               orderTotalPrice:
+ *                 type: number
+ *               address:
+ *                 type: object
+ *               cardNumber:
+ *                 type: string
+ *               cvvCode:
+ *                 type: string
+ *               expiryDate:
+ *                 type: string
+ *               cardHolder:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Order created
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ErrorResponse"
+ */
 // Add Order
 router.post(
   "/order/add",
@@ -566,14 +799,10 @@ router.post(
     check("items", "Please include items list").isArray({
       min: 1
     }),
+    check("items.*.quantity", "Quantity must be at least 1").isInt({ min: 1 }),
   ], // End of Express Validator 
+  validateRequest,
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        errors: errors.array(),
-      });
-    }
     try {
       const {
         type,
@@ -793,6 +1022,24 @@ router.post(
 );  //   End of Add Order
 
 
+/**
+ * @swagger
+ * /api/customer/order/get:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get customer orders
+ *     security:
+ *       - CustomerToken: []
+ *     parameters:
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Order list
+ */
 // Get Orders
 router.get(
   "/order/get",
@@ -852,6 +1099,24 @@ router.get(
 );  //   End of Add Order
 
 
+/**
+ * @swagger
+ * /api/customer/statistic:
+ *   get:
+ *     tags: [Statistics]
+ *     summary: Customer statistics
+ *     security:
+ *       - CustomerToken: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Statistic response
+ */
 // Get Statistics
 router.get(
   "/statistic",

@@ -5,10 +5,48 @@ const Supplier = require("../../models/Supplier");
 const Product = require("../../models/Product");
 const Order = require("../../models/Order");
 // Middleware
-const { check, validationResult } = require("express-validator");
+const { check } = require("express-validator");
+const validateRequest = require("../../middleware/validateRequest");
 const authAdminMiddleware = require("../../middleware/authAdmin");
 
 
+/**
+ * @swagger
+ * /api/order/order/:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Create an admin order
+ *     security:
+ *       - AdminToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               supplierId:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   $ref: "#/components/schemas/OrderItem"
+ *               orderTotalPrice:
+ *                 type: number
+ *               address:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Order created
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ErrorResponse"
+ */
 // Add an order
 router.post(
   '/order/',
@@ -23,15 +61,11 @@ router.post(
     check("items", "Please include items list").isArray({
       min: 1
     }),
+    check("items.*.quantity", "Quantity must be at least 1").isInt({ min: 1 }),
   ], // End of Express Validator 
+  validateRequest,
   async (req, res) => {
     // console.log('orderRouter -> addOrder -> req.body ->', req.body);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        errors: errors.array(),
-      });
-    }
     try {
       const {
         supplierId,

@@ -13,6 +13,32 @@ const authAdminMiddleware = require("../../middleware/authAdmin");
 
 
 
+/**
+ * @swagger
+ * /api/feature/feature/:
+ *   post:
+ *     tags: [Features]
+ *     summary: Create a feature
+ *     security:
+ *       - AdminToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *               jsonText:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Feature created
+ *       400:
+ *         description: Validation error
+ */
 // Add a Feature
 router.post(
   "/feature/",
@@ -130,6 +156,18 @@ router.post(
   }
 )
 
+/**
+ * @swagger
+ * /api/feature/feature/:
+ *   get:
+ *     tags: [Features]
+ *     summary: Get features
+ *     security:
+ *       - AdminToken: []
+ *     responses:
+ *       200:
+ *         description: Feature list
+ */
 // Get Features
 router.get(
   "/feature/",
@@ -157,6 +195,24 @@ router.get(
 );
 
 
+/**
+ * @swagger
+ * /api/feature/feature/{featureId}:
+ *   delete:
+ *     tags: [Features]
+ *     summary: Delete a feature
+ *     security:
+ *       - AdminToken: []
+ *     parameters:
+ *       - in: path
+ *         name: featureId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Feature deleted
+ */
 // Delete Feature
 router.delete(
   "/feature/:featureId",

@@ -12,6 +12,32 @@ const { check, validationResult } = require("express-validator");
 const authAdminMiddleware = require("../../middleware/authAdmin");
 
 
+/**
+ * @swagger
+ * /api/category/:
+ *   post:
+ *     tags: [Categories]
+ *     summary: Create a category
+ *     security:
+ *       - AdminToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *               jsonText:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Category created
+ *       400:
+ *         description: Validation error
+ */
 // Add a Category
 router.post(
   '/',  
@@ -177,6 +203,18 @@ router.post(
   }
 );  // End of Add a Category
 
+/**
+ * @swagger
+ * /api/category/:
+ *   get:
+ *     tags: [Categories]
+ *     summary: Get categories
+ *     security:
+ *       - AdminToken: []
+ *     responses:
+ *       200:
+ *         description: Category list
+ */
 // Get Categories
 router.get(
   "/", 
@@ -194,6 +232,25 @@ router.get(
   }
 );
 
+/**
+ * @swagger
+ * /api/category/query:
+ *   get:
+ *     tags: [Categories]
+ *     summary: Query categories
+ *     parameters:
+ *       - in: query
+ *         name: searched
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: showOnlySpecial
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *         description: Category list
+ */
 // Query Categories
 router.get(
   "/query",
