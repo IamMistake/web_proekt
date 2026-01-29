@@ -3,8 +3,11 @@ import React from "react";
 
 const NotFound = () => {
   return (
-    <div>
-      <h1>404 NOT FOUND!</h1>
+    <div className="container-main">
+      <div className="card-soft text-center">
+        <h1>404</h1>
+        <p>Страницата не е пронајдена.</p>
+      </div>
     </div>
   );
 };

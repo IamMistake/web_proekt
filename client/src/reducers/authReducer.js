@@ -2,6 +2,9 @@ import axios from "axios";
 import {
   LOGIN_SUCCESS,
   LOGIN_FAIL,
+  REGISTER_SUCCESS,
+  REGISTER_FAIL,
+  SET_ROLE,
   LOGOUT,
   TOKEN_FAIL,
   APP_INITIALISED,
@@ -12,6 +15,7 @@ import setAuthToken from "../utils/setAuthToken";
 
 const initialState = {
   token: localStorage.getItem("token"),
+  role: localStorage.getItem("role") || "guest",
   appInitialised: false,
   isAuthenticated: false,
   loading: true,
@@ -24,27 +28,34 @@ export default function (state = initialState, action) {
   switch (type) {
     // case REGISTER_SUCCESS:
     case LOGIN_SUCCESS:
+    case REGISTER_SUCCESS:
       return {
         ...state,
-        ...payload,
+        token: payload.token,
+        role: payload.role,
         isAuthenticated: true,
         loading: false,
       };
     case LOGOUT:
     case LOGIN_FAIL:
+    case REGISTER_FAIL:
       localStorage.removeItem("token");
+      localStorage.removeItem("role");
       setAuthToken(null);
       return {
         ...state,
         isAuthenticated: false,
+        role: "guest",
       };
     case TOKEN_FAIL:
       console.log('authReducer -> TOKEN_FAIL ->')
       localStorage.removeItem("token");
+      localStorage.removeItem("role");
       setAuthToken(null);
       return {
         ...state,
         isAuthenticated: false,
+        role: "guest",
       };
     case APP_INITIALISED:
       if ( localStorage.token ) {
@@ -52,6 +63,7 @@ export default function (state = initialState, action) {
         return {
           ...state,
           isAuthenticated: true,
+          role: localStorage.getItem("role") || "guest",
           appInitialised: true,
         };
       }
@@ -61,6 +73,11 @@ export default function (state = initialState, action) {
       return {
         ...state,
         appInitialised: true,
+      };
+    case SET_ROLE:
+      return {
+        ...state,
+        role: payload,
       };
 
     default:

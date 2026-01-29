@@ -2,6 +2,9 @@
 // Auth
 export const LOGIN_SUCCESS = "LOGIN_SUCCESS";
 export const LOGIN_FAIL = "LOGIN_FAIL";
+export const REGISTER_SUCCESS = "REGISTER_SUCCESS";
+export const REGISTER_FAIL = "REGISTER_FAIL";
+export const SET_ROLE = "SET_ROLE";
 export const LOGOUT = "LOGOUT";
 export const TOKEN_FAIL = "TOKEN_FAIL";
 export const APP_INITIALISED = "APP_INITIALISED";

@@ -34,7 +34,7 @@ const seedDatabase = async () => {
   const salt = await bcrypt.genSalt(10);
   const admin = await Admin.create({
     email: "admin@techstore.local",
-    password: await bcrypt.hash("seeded-admin", salt),
+    password: await bcrypt.hash("Admin123@", salt),
   });
 
   const customer = await Customer.create({
