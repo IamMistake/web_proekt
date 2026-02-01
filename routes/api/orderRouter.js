@@ -182,6 +182,36 @@ router.post(
   }
 );  // End of Add an order
 
+/**
+ * @swagger
+ * /api/order/procurement:
+ *   get:
+ *     tags: [Orders]
+ *     summary: List procurement orders
+ *     security:
+ *       - AdminToken: []
+ *     responses:
+ *       200:
+ *         description: Procurement orders
+ *       403:
+ *         description: Forbidden
+ */
+router.get(
+  "/procurement",
+  authAdminMiddleware,
+  async (req, res) => {
+    try {
+      const orders = await Order.find({ type: "procurement" })
+        .populate("supplierId", "name email")
+        .sort({ date: -1 });
+      return res.status(200).json(orders);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);
+
 
 
 module.exports = router;

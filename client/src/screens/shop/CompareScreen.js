@@ -1,17 +1,76 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+import apiService from "../../services/apiService";
 import demoProducts from "../../data/demoProducts";
 import { formatCurrency } from "../../utils/formatters";
 
 const CompareScreen = () => {
-  const [selection, setSelection] = useState([
-    demoProducts[0]?.id,
-    demoProducts[1]?.id,
-    demoProducts[2]?.id,
-  ]);
+  const { isAuthenticated, role } = useSelector((state) => state.authReducer);
+  const [products, setProducts] = useState([]);
+  const [selection, setSelection] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (isAuthenticated && role === "customer") {
+        try {
+          const productsRes = await apiService.getCustomerProducts("");
+          const mappedProducts = (productsRes.data || []).map((item) => ({
+            id: item._id,
+            category: (item.category || []).length > 0 ? item.category[0]?.title || "Категорија" : "",
+            productNo: item.productNo,
+            price: item.price,
+            stock: item.stockStatus?.stockQuantity || 0,
+            specs: item.specs || [],
+            image: item.imageList?.[0]
+              ? `/api/product/images/${item.imageList[0].imageId}`
+              : "https://via.placeholder.com/400x300/667eea/fff?text=Product",
+          }));
+          setProducts(mappedProducts);
+          setSelection([
+            mappedProducts[0]?.id,
+            mappedProducts[1]?.id,
+            mappedProducts[2]?.id,
+          ].filter(Boolean));
+        } catch (error) {
+          if (error.response?.status === 401) {
+            setProducts([]);
+            return;
+          }
+          setProducts(demoProducts);
+          setSelection([demoProducts[0]?.id, demoProducts[1]?.id, demoProducts[2]?.id].filter(Boolean));
+        }
+      } else {
+        try {
+          const productsRes = await apiService.getPublicProducts("");
+          const mappedProducts = (productsRes.data || []).map((item) => ({
+            id: item._id,
+            category: (item.category || []).length > 0 ? item.category[0]?.title || "Категорија" : "",
+            productNo: item.productNo,
+            price: item.price,
+            stock: item.stockStatus?.stockQuantity || 0,
+            specs: item.specs || [],
+            image: item.imageList?.[0]
+              ? `/api/product/images/${item.imageList[0].imageId}`
+              : "https://via.placeholder.com/400x300/667eea/fff?text=Product",
+          }));
+          setProducts(mappedProducts);
+          setSelection([
+            mappedProducts[0]?.id,
+            mappedProducts[1]?.id,
+            mappedProducts[2]?.id,
+          ].filter(Boolean));
+        } catch (error) {
+          setProducts(demoProducts);
+          setSelection([demoProducts[0]?.id, demoProducts[1]?.id, demoProducts[2]?.id].filter(Boolean));
+        }
+      }
+    };
+    loadData();
+  }, [isAuthenticated, role]);
 
   const selectedProducts = useMemo(
-    () => selection.map((id) => demoProducts.find((item) => item.id === id)),
-    [selection]
+    () => selection.map((id) => products.find((item) => item.id === id)),
+    [selection, products]
   );
 
   const specs = useMemo(() => {
@@ -36,7 +95,7 @@ const CompareScreen = () => {
                 setSelection(next);
               }}
             >
-              {demoProducts.map((product) => (
+              {products.map((product) => (
                 <option key={product.id} value={product.id}>
                   {product.productNo}
                 </option>

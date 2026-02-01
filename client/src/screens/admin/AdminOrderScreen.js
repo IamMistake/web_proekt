@@ -8,6 +8,7 @@ const priceRegex = /^\d+(\.\d{1,2})?$/;
 const AdminOrderScreen = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [procurements, setProcurements] = useState([]);
   const [productSearch, setProductSearch] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [items, setItems] = useState([]);
@@ -24,6 +25,18 @@ const AdminOrderScreen = () => {
       }
     };
     loadSuppliers();
+  }, []);
+
+  useEffect(() => {
+    const loadProcurements = async () => {
+      try {
+        const res = await apiService.getProcurementOrders();
+        setProcurements(res.data || []);
+      } catch (error) {
+        setProcurements([]);
+      }
+    };
+    loadProcurements();
   }, []);
 
   const total = useMemo(
@@ -93,12 +106,23 @@ const AdminOrderScreen = () => {
       orderTotalPrice: Number(total.toFixed(2)),
       address,
     };
-    await apiService.addOrder(payload);
+    const createRes = await apiService.addOrder(payload);
+    const createdOrder = createRes.data?.order;
     setSupplierId("");
     setItems([]);
     setAddress("");
     setProductSearch("");
     setProducts([]);
+    try {
+      const res = await apiService.getProcurementOrders();
+      setProcurements(res.data || []);
+    } catch (error) {
+      if (createdOrder) {
+        setProcurements((prev) => [createdOrder, ...prev]);
+      } else {
+        setProcurements([]);
+      }
+    }
   };
 
   return (
@@ -203,6 +227,36 @@ const AdminOrderScreen = () => {
             <div className="fw-bold mt-3">Вкупно: {formatCurrency(total)}</div>
           </div>
         </div>
+      </div>
+
+      <div className="card-soft mt-4">
+        <h5 className="page-section-title">Набавки</h5>
+        {procurements.length === 0 ? (
+          <div className="text-muted">Нема набавки.</div>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-sm">
+              <thead>
+                <tr>
+                  <th>Добавувач</th>
+                  <th>Ставки</th>
+                  <th>Вкупно</th>
+                  <th>Датум</th>
+                </tr>
+              </thead>
+              <tbody>
+                {procurements.map((order) => (
+                  <tr key={order._id}>
+                    <td>{order.supplierId?.name || "-"}</td>
+                    <td>{order.items?.length || 0}</td>
+                    <td>{formatCurrency(order.orderTotalPrice || 0)}</td>
+                    <td>{order.date ? new Date(order.date).toLocaleDateString() : "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

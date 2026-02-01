@@ -1,10 +1,15 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+import apiService from "../../services/apiService";
 import demoProducts from "../../data/demoProducts";
 import ProductCard from "../../components/common/ProductCard";
 import { useCart } from "../../context/CartContext";
 
 const SearchScreen = () => {
+  const { isAuthenticated, role } = useSelector((state) => state.authReducer);
   const { addItem } = useCart();
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [filters, setFilters] = useState({
     category: "all",
     min: "",
@@ -13,8 +18,63 @@ const SearchScreen = () => {
     availability: "all",
   });
 
+  useEffect(() => {
+    const loadData = async () => {
+      if (isAuthenticated && role === "customer") {
+        try {
+          const [categoriesRes, productsRes] = await Promise.all([
+            apiService.getCustomerCategories(),
+            apiService.getCustomerProducts(""),
+          ]);
+          setCategories(categoriesRes.data || []);
+          setProducts(
+            (productsRes.data || []).map((item) => ({
+              id: item._id,
+              category: (item.category || []).length > 0 ? item.category[0]?.title || "Категорија" : "",
+              productNo: item.productNo,
+              price: item.price,
+              stock: item.stockStatus?.stockQuantity || 0,
+              image: item.imageList?.[0]
+                ? `/api/product/images/${item.imageList[0].imageId}`
+                : "https://via.placeholder.com/400x300/667eea/fff?text=Product",
+            }))
+          );
+        } catch (error) {
+          if (error.response?.status === 401) {
+            setProducts([]);
+            return;
+          }
+          setProducts(demoProducts);
+        }
+      } else {
+        try {
+          const [categoriesRes, productsRes] = await Promise.all([
+            apiService.getPublicCategories(),
+            apiService.getPublicProducts(""),
+          ]);
+          setCategories(categoriesRes.data || []);
+          setProducts(
+            (productsRes.data || []).map((item) => ({
+              id: item._id,
+              category: (item.category || []).length > 0 ? item.category[0]?.title || "Категорија" : "",
+              productNo: item.productNo,
+              price: item.price,
+              stock: item.stockStatus?.stockQuantity || 0,
+              image: item.imageList?.[0]
+                ? `/api/product/images/${item.imageList[0].imageId}`
+                : "https://via.placeholder.com/400x300/667eea/fff?text=Product",
+            }))
+          );
+        } catch (error) {
+          setProducts(demoProducts);
+        }
+      }
+    };
+    loadData();
+  }, [isAuthenticated, role]);
+
   const filtered = useMemo(() => {
-    return demoProducts.filter((product) => {
+    return products.filter((product) => {
       if (filters.category !== "all" && product.category !== filters.category) return false;
       if (filters.min && product.price < Number(filters.min)) return false;
       if (filters.max && product.price > Number(filters.max)) return false;
@@ -23,7 +83,7 @@ const SearchScreen = () => {
       if (filters.availability === "out" && product.stock > 0) return false;
       return true;
     });
-  }, [filters]);
+  }, [filters, products]);
 
   return (
     <div className="container-main">
@@ -38,9 +98,11 @@ const SearchScreen = () => {
               onChange={(e) => setFilters({ ...filters, category: e.target.value })}
             >
               <option value="all">Сите</option>
-              <option value="Процесори">Процесори</option>
-              <option value="Графички картички">Графички картички</option>
-              <option value="Складирање">Складирање</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat.title}>
+                  {cat.title}
+                </option>
+              ))}
             </select>
             <label className="form-label">Цена (мин - макс)</label>
             <div className="d-flex gap-2 mb-3">

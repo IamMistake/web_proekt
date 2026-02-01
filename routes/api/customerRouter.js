@@ -443,6 +443,115 @@ router.post(
  *       200:
  *         description: List of categories
  */
+// Public Categories
+router.get(
+  "/public/categories",
+  async (req, res) => {
+    try {
+      const categories = await Category.find({});
+      res.status(200).json(
+        categories,
+      );
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);
+
+// Public Query Products
+router.post(
+  "/public/product/query",
+  async (req, res) => {
+    const search = req.query.search || "";
+    console.log('customerRouter -> Public Query Products -> query Text ->', search);
+    try {
+      if (!search.trim()) {
+        const productList = await Product.find({});
+        return res.status(200).json(productList);
+      }
+      const categoryList = await Category.find({
+        title: {
+          $regex: new RegExp(search),
+          $options: "i" // case Insensitive
+        }
+      })
+      const categoryOrList = categoryList.map(
+        (categoryItem) => {
+          return {
+            category: categoryItem._id
+          }
+        }
+      );
+      const productList = await Product.find({
+        $or: [
+          {
+            brand: {
+              $regex: new RegExp(search),
+              $options: "i" // case Insensitive
+            }
+          },
+          {
+            productNo: {
+              $regex: new RegExp(search),
+              $options: "i" // case Insensitive
+            }
+          },
+          ...categoryOrList
+        ]
+      });
+
+      return res.status(200).json(
+        productList
+      );
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);
+
+// Public Get Products
+router.get(
+  "/public/product/get",
+  async (req, res) => {
+    let orList = [];
+    const productId = req.query.productId;
+    if (productId) {
+      orList.push(
+        { _id: productId }
+      );
+    }
+    const categoryId = req.query.categoryId;
+    if (categoryId) {
+      orList.push(
+        { category: categoryId }
+      );
+    }
+    const brand = req.query.brand;
+    if (brand) {
+      orList.push(
+        { brand }
+      );
+    }
+    try {
+      const productList = orList.length === 0
+        ? await Product.find({})
+        : await Product.find({
+          $or: [
+            ...orList
+          ]
+        });
+      return res.status(200).json(
+        productList
+      );
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);
+
 // Get Categories
 router.get(
   "/categories",

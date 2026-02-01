@@ -49,15 +49,78 @@ const ProductListScreen = () => {
           setProducts(demoProducts);
         }
       } else {
-        setProducts(demoProducts);
+        try {
+          const [categoriesRes, productsRes] = await Promise.all([
+            apiService.getPublicCategories(),
+            apiService.getPublicProducts(""),
+          ]);
+          setCategories(categoriesRes.data || []);
+          setProducts(
+            (productsRes.data || []).map((item) => ({
+              id: item._id,
+              category: (item.category || []).length > 0 ? "Категорија" : "",
+              productNo: item.productNo,
+              price: item.price,
+              stock: item.stockStatus?.stockQuantity || 0,
+              image: item.imageList?.[0]
+                ? `/api/product/images/${item.imageList[0].imageId}`
+                : "https://via.placeholder.com/400x300/667eea/fff?text=Product",
+            }))
+          );
+        } catch (error) {
+          setProducts([]);
+        }
       }
     };
     loadData();
   }, [isAuthenticated, role, history]);
 
+  useEffect(() => {
+    const loadGuestSearch = async () => {
+      if (isAuthenticated && role !== "guest") {
+        return;
+      }
+      try {
+        if (search.trim()) {
+          const res = await apiService.queryPublicProducts(search);
+          setProducts(
+            (res.data || []).map((item) => ({
+              id: item._id,
+              category: (item.category || []).length > 0 ? "Категорија" : "",
+              productNo: item.productNo,
+              price: item.price,
+              stock: item.stockStatus?.stockQuantity || 0,
+              image: item.imageList?.[0]
+                ? `/api/product/images/${item.imageList[0].imageId}`
+                : "https://via.placeholder.com/400x300/667eea/fff?text=Product",
+            }))
+          );
+          return;
+        }
+        const res = await apiService.getPublicProducts("");
+        setProducts(
+          (res.data || []).map((item) => ({
+            id: item._id,
+            category: (item.category || []).length > 0 ? "Категорија" : "",
+            productNo: item.productNo,
+            price: item.price,
+            stock: item.stockStatus?.stockQuantity || 0,
+            image: item.imageList?.[0]
+              ? `/api/product/images/${item.imageList[0].imageId}`
+              : "https://via.placeholder.com/400x300/667eea/fff?text=Product",
+          }))
+        );
+      } catch (error) {
+        setProducts([]);
+      }
+    };
+    loadGuestSearch();
+  }, [isAuthenticated, role, search]);
+
   const filteredProducts = useMemo(() => {
+    const isGuest = !isAuthenticated || role === "guest";
     let data = [...products];
-    if (search.trim()) {
+    if (search.trim() && !isGuest) {
       const query = search.toLowerCase();
       data = data.filter((item) => item.productNo.toLowerCase().includes(query));
     }
@@ -71,7 +134,7 @@ const ProductListScreen = () => {
       data.sort((a, b) => b.stock - a.stock);
     }
     return data;
-  }, [products, search, category, sort]);
+  }, [products, search, category, sort, isAuthenticated, role]);
 
   return (
     <div className="container-main">

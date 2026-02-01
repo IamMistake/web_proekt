@@ -39,6 +39,28 @@ const ProductDetailScreen = () => {
         } catch (error) {
           // fallback below
         }
+      } else {
+        try {
+          const res = await apiService.getPublicProducts(`productId=${id}`);
+          const item = res.data?.[0];
+          if (item) {
+            setProduct({
+              id: item._id,
+              category: "Категорија",
+              productNo: item.productNo,
+              price: item.price,
+              stock: item.stockStatus?.stockQuantity || 0,
+              image: item.imageList?.[0]
+                ? `/api/product/images/${item.imageList[0].imageId}`
+                : "https://via.placeholder.com/800x600/667eea/fff?text=Product",
+              specs: item.specifications?.map((spec) => ({ key: spec.key, value: spec.value })) || [],
+              description: item.keyProperties || "-",
+            });
+            return;
+          }
+        } catch (error) {
+          // fallback below
+        }
       }
       const fallback = demoProducts.find((item) => item.id === id) || demoProducts[0];
       setProduct(fallback);
